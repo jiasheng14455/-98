@@ -255,10 +255,12 @@ const questions = [
 
 let currentQuestionIndex = 0;
 let totalScore = 0;
+let userAnswers = []; // 记录用户选择的答案
 
 const questionElement = document.getElementById("question");
 const optionsElement = document.getElementById("options");
 const nextButton = document.getElementById("next-btn");
+const prevButton = document.getElementById("prev-btn");
 const progressText = document.getElementById("progress-text");
 const testPage = document.getElementById("test-page");
 const resultPage = document.getElementById("result-page");
@@ -274,16 +276,24 @@ function showQuestion() {
     const button = document.createElement("button");
     button.textContent = option.text;
     button.classList.add("option-btn");
-    button.addEventListener("click", () => selectOption(option.score));
+    if (userAnswers[currentQuestionIndex] === index) {
+      button.classList.add("selected"); // 如果已选择，添加选中状态
+    }
+    button.addEventListener("click", () => selectOption(index, option.score));
     optionsElement.appendChild(button);
   });
   progressText.textContent = `${currentQuestionIndex + 1}/${questions.length}`;
-  nextButton.disabled = true;
+  nextButton.disabled = userAnswers[currentQuestionIndex] === undefined;
+  prevButton.disabled = currentQuestionIndex === 0;
 }
 
-function selectOption(score) {
-  totalScore += score;
+function selectOption(index, score) {
+  userAnswers[currentQuestionIndex] = index; // 记录用户选择
+  totalScore = userAnswers.reduce((sum, answerIndex, i) => {
+    return sum + (questions[i].options[answerIndex]?.score || 0);
+  }, 0);
   nextButton.disabled = false;
+  showQuestion(); // 刷新选项状态
 }
 
 function showResult() {
@@ -306,17 +316,25 @@ function showResult() {
 }
 
 nextButton.addEventListener("click", () => {
-  currentQuestionIndex++;
-  if (currentQuestionIndex < questions.length) {
+  if (currentQuestionIndex < questions.length - 1) {
+    currentQuestionIndex++;
     showQuestion();
   } else {
     showResult();
   }
 });
 
+prevButton.addEventListener("click", () => {
+  if (currentQuestionIndex > 0) {
+    currentQuestionIndex--;
+    showQuestion();
+  }
+});
+
 document.getElementById("retry-btn").addEventListener("click", () => {
   currentQuestionIndex = 0;
   totalScore = 0;
+  userAnswers = [];
   testPage.classList.remove("hidden");
   resultPage.classList.add("hidden");
   showQuestion();
